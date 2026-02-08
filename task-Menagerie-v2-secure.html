@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Card Menagerie v35 🥚✨ (Secure)</title>
+    <style>
+        :root {
+            --bg-color: #fff9c4;
+            --box-color: #ffffff;
+            --accent: #009688;
+            --secondary: #ff9800;
+            --wood: #8d6e63;
+            --wood-dark: #5d4037;
+            --completed: #e0e0e0;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        
+        h1 { color: #333; margin: 0 0 20px 0; }
+
+        .header-container { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 1400px; margin-bottom: 15px; }
+        .palette-tracker { background: rgba(255,255,255,0.8); padding: 8px 15px; border-radius: 12px; display: flex; gap: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .palette-badge { font-size: 0.75em; padding: 4px 8px; border-radius: 6px; background: #ddd; color: #888; border: 1px solid #ccc; font-weight: bold; transition: all 0.3s; }
+        .palette-badge.unlocked { color: #fff; border: none; transform: scale(1.05); box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .p-natural { background: #795548; } .p-pastel { background: #90caf9; color: #444 !important; } .p-tropical { background: #ff4081; } .p-nebula { background: #673ab7; } .p-golden { background: #ffb300; } .p-jewel { background: #00695c; } .p-jarring { background: linear-gradient(45deg, lime, magenta); color: black !important; }
+
+        .container { display: flex; gap: 20px; width: 100%; max-width: 1400px; align-items: flex-start; height: 80vh;}
+        
+        .controls { 
+            flex: 1; 
+            background: var(--box-color); 
+            padding: 20px; 
+            border-radius: 15px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+            display: flex; 
+            flex-direction: column; 
+            gap: 15px; 
+            max-height: 100%; 
+            overflow: hidden;
+            min-width: 280px; 
+        }
+
+        .habitat-container {
+            flex: 2;
+            background-color: #ffebee;
+            background-image: linear-gradient(90deg, rgba(255, 255, 255, 0.5) 50%, transparent 50%), linear-gradient(rgba(255, 255, 255, 0.5) 50%, transparent 50%);
+            background-size: 50px 50px;
+            border: 12px solid var(--wood); border-radius: 15px; 
+            position: relative;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.1), 0 10px 20px rgba(0,0,0,0.1);
+            min-height: 600px; /* Default Base Height */
+            overflow: hidden;
+            transition: height 0.5s ease;
+        }
+
+        .journal {
+            flex: 1; background: #fff8e1; border: 1px solid #d7ccc8; padding: 20px; border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 10px;
+            max-height: 100%; min-width: 280px; overflow: hidden;
+        }
+        .journal h3 { margin: 0 0 10px 0; color: #5d4037; border-bottom: 2px dashed #8d6e63; padding-bottom: 10px; }
+        .log-container { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 5px; }
+        .log-entry { font-size: 0.85em; background: rgba(255,255,255,0.6); padding: 8px; border-radius: 6px; border-left: 4px solid var(--accent); }
+        .log-timestamp { color: #888; font-size: 0.8em; font-family: monospace; display: block; margin-bottom: 2px;}
+        .log-text strong { color: #333; }
+
+        .habitat { width: 100%; height: 100%; position: relative; } 
+
+        .creature-wrapper { 
+            position: absolute; 
+            cursor: pointer; 
+            transition: top 20s linear, left 20s linear, transform 0.2s; 
+            will-change: top, left;
+        }
+        .creature-wrapper:hover { transform: scale(1.3) !important; z-index: 9999 !important; }
+
+        /* --- EFFECTS --- */
+        .is-shiny svg { filter: drop-shadow(0 0 5px gold); }
+        .sparkles { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        .sparkle-star { position: absolute; width: 10px; height: 10px; background-color: #fff; clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); animation: twinkle 1.5s infinite ease-in-out; opacity: 0; }
+        
+        .egg-timer {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.7); color: #fff; padding: 4px 8px; border-radius: 6px;
+            font-size: 12px; font-weight: bold; pointer-events: none; white-space: nowrap;
+            z-index: 99999; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            opacity: 0; animation: fadeIn 0.2s forwards;
+        }
+
+        @keyframes twinkle { 0% { transform: scale(0) rotate(0deg); opacity: 0; } 50% { transform: scale(1) rotate(180deg); opacity: 1; } 100% { transform: scale(0) rotate(360deg); opacity: 0; } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        #notification { position: fixed; top: 20px; background: #ffd700; color: #333; padding: 15px 30px; border-radius: 50px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transform: translateY(-100px); opacity: 0; transition: all 0.5s; z-index: 1000; pointer-events: none; }
+        #notification.show { transform: translateY(0); opacity: 1; }
+        @keyframes wobble { 0% { transform: rotate(0deg); } 25% { transform: rotate(5deg); } 50% { transform: rotate(0deg); } 75% { transform: rotate(-5deg); } 100% { transform: rotate(0deg); } }
+        @keyframes popOpen { 0% { transform: scale(0.5); opacity: 0; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes hover { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+        @keyframes hop { 0% { transform: translateY(0); } 50% { transform: translateY(-8px); } 100% { transform: translateY(0); } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+        .egg-mode { animation: wobble 2s infinite ease-in-out; }
+        .just-hatched { animation: popOpen 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+
+        .quick-grid-label { font-size: 0.85em; color: #666; font-weight: bold; margin-bottom: 5px; }
+        .quick-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-bottom: 15px; }
+        .quick-btn { background: #f0f4f8; border: 1px solid #ccc; border-radius: 6px; padding: 8px 0; cursor: pointer; text-align: center; font-size: 1.2em; transition: all 0.2s; }
+        .quick-btn:hover { background: var(--accent); border-color: var(--accent); transform: scale(1.1); }
+        .input-group { display: flex; gap: 5px; flex-direction: column; }
+        input[type="text"], textarea { padding: 10px; border: 2px solid #ddd; border-radius: 8px; width: 100%; box-sizing: border-box; font-family: inherit; }
+        select { padding: 10px; border: 2px solid #ddd; border-radius: 8px; background: white; width: 100%; }
+        .task-btn { background: #2196f3; color: white; border: none; padding: 10px; border-radius: 8px; width: 100%; cursor: pointer; font-weight: bold; margin-top: 5px; }
+        .task-btn:hover { background: #1976d2; }
+        .todo-container { flex: 1; overflow-y: auto; border: 1px solid #eee; border-radius: 8px; background: #fafafa; padding: 5px; }
+        .todo-item { padding: 8px 10px; border-bottom: 1px solid #eee; background: white; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: all 0.2s; font-size: 0.9em; }
+        .todo-item:hover { background: #e0f2f1; padding-left: 15px; }
+        .todo-item.completed { background: var(--completed); color: #999; text-decoration: line-through; opacity: 0.7; }
+        
+        .expand-btn { background: #4CAF50; color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; animation: pulse 2s infinite; display: none; margin-top: 10px; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
+        
+        details { border-top: 2px dashed #ddd; padding-top: 10px; margin-top: 10px; }
+        summary { cursor: pointer; color: #666; font-weight: bold; margin-bottom: 10px; }
+        textarea { height: 80px; resize: vertical; margin-bottom: 5px; }
+        .reset-link { color: #ff5252; text-decoration: underline; cursor: pointer; font-size: 0.8em; text-align: center; margin-top: 10px; display: block; }
+    </style>
+</head>
+<body>
+
+    <div id="notification">✨ Palette Unlocked! ✨</div>
+
+    <div class="header-container">
+        <h1>Report Card Menagerie v35 🥚✨ (Secure)</h1>
+        <div class="palette-tracker" id="paletteTracker"></div>
+    </div>
+    
+    <div class="container">
+        <div class="controls">
+            <div class="quick-grid-label">Quick Hatch (Generic)</div>
+            <div class="quick-grid" id="quickGrid"></div>
+            <hr style="width:100%; border:0; border-top:1px solid #eee; margin: 5px 0;">
+            <h3 style="margin:5px 0 10px 0;">To Do List</h3>
+            <div class="todo-container" id="todoList"><div style="color:#aaa; text-align:center; padding:20px;">No tasks yet. Use Batch Create below!</div></div>
+            
+            <button id="expandBtn" class="expand-btn" onclick="triggerExpansion()">⛺ Expand Blanket (+400px)</button>
+
+            <details open>
+                <summary>Batch Create Tasks</summary>
+                <div class="input-group">
+                    <select id="batchCreatureSelect">
+                        <option value="frog">🐸 Frog</option>
+                        <option value="kakapo">🦜 Kakapo</option>
+                        <option value="bee">🐝 Bee</option>
+                        <option value="guinea">🐹 Guinea</option>
+                        <option value="beaver">🦫 Beaver</option>
+                        <option value="snake">🐍 Snake</option>
+                        <option value="onion">🧅 Onion</option>
+                        <option value="kitty">🐱 Kitty</option>
+                        <option value="axolotl">🦎 Axolotl</option>
+                        <option value="mushroom">🍄 Mushroom</option>
+                    </select>
+                    <input type="text" id="batchTaskName" placeholder="Task Name (e.g. 'Grading')">
+                    <textarea id="batchList" placeholder="Paste names here...&#10;Student 1&#10;Student 2&#10;Student 3"></textarea>
+                    <button class="task-btn" onclick="runBatchAdd()">Add to List</button>
+                </div>
+            </details>
+            <div style="text-align: center; margin-top: 20px;">
+                <h2 id="totalCount" style="margin:0; font-size: 2em; color:var(--accent);">0</h2>
+                <small>Creatures Collected</small>
+                <span class="reset-link" onclick="hardReset()">Reset All Progress</span>
+            </div>
+        </div>
+
+        <div class="habitat-container" id="habitatContainer">
+            <div class="habitat" id="habitat"></div>
+        </div>
+
+        <div class="journal">
+            <h3>Hatchery Journal</h3>
+            <div class="log-container" id="logContainer">
+                <div style="color:#999; font-style:italic; font-size:0.9em;">No hatches recorded yet...</div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    function rnd(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+    
+    function escapeHtml(text) {
+        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+        return text.replace(/[&<>"']/g, m => map[m]);
+    }
+    
+    function validateInput(text, maxLength = 100) {
+        return (text || '').substring(0, maxLength).trim();
+    }
+
+    const NAME_DATA = [
+        {id:1,c:'title',w:'Professor',g:'NB'}, {id:2,c:'title',w:'Commander',g:'NB'}, {id:3,c:'title',w:'Doctor',g:'NB'}, {id:4,c:'title',w:'The Honorable',g:'NB'}, {id:5,c:'title',w:'Lady',g:'F'}, {id:6,c:'title',w:'Mister',g:'M'}, {id:7,c:'title',w:'His Excellency, King',g:'M'}, {id:8,c:'title',w:'Her Majesty, Queen',g:'F'}, {id:9,c:'title',w:'Lord',g:'M'},
+        {id:10,c:'name',w:'Windex',g:'NB'}, {id:11,c:'name',w:'Chlorox',g:'NB'}, {id:12,c:'name',w:'Wal-Mart',g:'NB'}, {id:13,c:'name',w:'Valvoline',g:'M'}, {id:14,c:'name',w:'Meatball',g:'M'}, {id:15,c:'title',w:'Headmistress',g:'F'}, {id:16,c:'name',w:'Pipecleaner',g:'NB'}, {id:17,c:'name',w:'Hamsteak',g:'M'}, {id:18,c:'name',w:'Petunia',g:'F'}, {id:19,c:'name',w:'Peloton',g:'NB'}, {id:20,c:'name',w:'Pookie',g:'F'},
+        {id:21,c:'name',w:'Sprocket',g:'NB'}, {id:22,c:'name',w:'Fortnite',g:'M'}, {id:23,c:'name',w:'Nacho Cheese Gordita',g:'NB'}, {id:24,c:'name',w:'Buckets',g:'NB'}, {id:25,c:'name',w:'June Bug',g:'F'}, {id:26,c:'name',w:'Foo Foo',g:'F'}, {id:27,c:'name',w:'Fuzzball',g:'NB'}, {id:28,c:'name',w:'Waffles',g:'NB'}, {id:29,c:'name',w:'Oprah',g:'F'}, {id:30,c:'title',w:'The Dark Huntress',g:'F'},
+        {id:31,c:'suffix',w:' IV',g:'NB'}, {id:32,c:'suffix',w:', Mistress of the night',g:'F'}, {id:33,c:'suffix',w:', Father of Time',g:'M'}, {id:34,c:'suffix',w:' Jr.',g:'NB'}, {id:35,c:'suffix',w:', Champion of the Great Halls',g:'NB'}, {id:36,c:'suffix',w:' of the Jungle',g:'NB'}, {id:37,c:'suffix',w:', Prince of Wales',g:'M'}, {id:38,c:'suffix',w:' esq.',g:'NB'}, {id:39,c:'suffix',w:', Human President',g:'NB'}, {id:40,c:'suffix',w:' VIII',g:'NB'},
+        {id:41,c:'suffix',w:' the Mighty',g:'NB'}, {id:42,c:'suffix',w:', Secretary of Burrowing',g:'NB'}, {id:43,c:'title',w:'Minstrel',g:'NB'}, {id:44,c:'title',w:'Reverend',g:'NB'}, {id:45,c:'title',w:'Sister',g:'F'}, {id:46,c:'title',w:'Brother',g:'M'}, {id:47,c:'title',w:'Vice-Chancellor',g:'NB'}, {id:48,c:'suffix',w:', Justice of the Peace',g:'NB'}, {id:49,c:'suffix',w:', Bringer of the Snuggles',g:'NB'}, {id:50,c:'suffix',w:', Lord of the Isles',g:'M'},
+        {id:51,c:'suffix',w:', Custodian of the Couch',g:'NB'}, {id:52,c:'suffix',w:', Knight of the Backyard',g:'NB'}, {id:53,c:'suffix',w:', Protector of the Two-Legged',g:'NB'}, {id:54,c:'title',w:'Princess',g:'F'}, {id:55,c:'name',w:'Cheesebro',g:'M'}, {id:56,c:'title',w:'Governor',g:'NB'}, {id:57,c:'name',w:'Butterbean',g:'NB'}, {id:58,c:'name',w:'Tumble Bumble',g:'NB'}, {id:59,c:'name',w:'Cupcake',g:'F'}, {id:60,c:'name',w:'Honey',g:'F'},
+        {id:61,c:'name',w:'Ernie',g:'M'}, {id:62,c:'name',w:'Costco',g:'M'}, {id:63,c:'name',w:'Acorn',g:'NB'}, {id:64,c:'name',w:'Bumblebee',g:'NB'}, {id:65,c:'name',w:'Cannoli',g:'NB'}, {id:66,c:'name',w:'Tidepod',g:'M'}, {id:67,c:'name',w:'Hans',g:'M'}, {id:68,c:'name',w:'ZORDGAX',g:'M'}, {id:69,c:'name',w:'KTZZT',g:'F'}, {id:70,c:'name',w:'Quasar',g:'F'},
+        {id:71,c:'name',w:'Noodle',g:'NB'}, {id:72,c:'name',w:'Parsnip',g:'NB'}, {id:73,c:'name',w:'Reginald',g:'M'}, {id:74,c:'name',w:'Batman',g:'M'}, {id:75,c:'name',w:'Cashew',g:'F'}, {id:76,c:'name',w:'Crumpet',g:'F'}, {id:77,c:'name',w:'Eggroll',g:'NB'}, {id:78,c:'name',w:'Nutmeg',g:'F'}, {id:79,c:'suffix',w:', Singer of Ancient Songs',g:'NB'}, {id:80,c:'suffix',w:', Sorceress of Cute',g:'F'},
+        {id:81,c:'suffix',w:', Vampire Slayer',g:'NB'}, {id:82,c:'suffix',w:', Bringer of Mail',g:'NB'}, {id:83,c:'name',w:'Klaus',g:'M'}, {id:85,c:'name',w:'Meatball',g:'M'}, {id:87,c:'name',w:'Dingo',g:'M'}, {id:88,c:'name',w:'Fang',g:'M'}, {id:89,c:'name',w:'Yeetmaster',g:'M'}, {id:90,c:'name',w:'Harambe',g:'M'},
+        {id:91,c:'name',w:'Sputs',g:'F'}, {id:92,c:'name',w:'Moonlight',g:'F'}, {id:93,c:'name',w:'Starlight',g:'F'}, {id:94,c:'name',w:'Microsoft',g:'M'}, {id:95,c:'name',w:'Tesla',g:'M'}, {id:96,c:'name',w:'Gamestop',g:'M'}, {id:97,c:'name',w:'Cricket',g:'NB'}, {id:98,c:'name',w:'Catfish',g:'M'}, {id:99,c:'name',w:'Coconut',g:'NB'}, {id:100,c:'name',w:'Boots',g:'NB'},
+        {id:101,c:'name',w:'Five-Thirty-Eight',g:'NB'}, {id:102,c:'name',w:'Taco Bell',g:'F'}, {id:103,c:'name',w:'Nacho',g:'NB'}, {id:104,c:'name',w:'Gingerbell',g:'F'}, {id:105,c:'name',w:'Carrot Cake',g:'NB'}, {id:106,c:'name',w:'Apple Crisp',g:'NB'}, {id:107,c:'name',w:'Pretzel',g:'NB'}, {id:108,c:'name',w:'Chopsticks',g:'NB'}, {id:109,c:'name',w:'Noodles',g:'NB'}, {id:110,c:'name',w:'Bacon',g:'NB'},
+        {id:111,c:'name',w:'Maple',g:'NB'}, {id:112,c:'name',w:'Corn on the Cobb',g:'NB'}, {id:113,c:'name',w:'Nutella',g:'NB'}, {id:114,c:'name',w:'Macaroni',g:'NB'}, {id:115,c:'name',w:'Cookie Dough',g:'NB'}, {id:116,c:'name',w:'Lemon Sorbet',g:'F'}, {id:117,c:'name',w:'Cream Cheese',g:'M'}, {id:118,c:'name',w:'Scrambled Eggs',g:'NB'}, {id:119,c:'name',w:'Junebug Jello',g:'F'}, {id:120,c:'suffix',w:', Goddess of Guinea Pigs',g:'F'},
+        {id:121,c:'name',w:'Sasquatch',g:'M'}, {id:122,c:'name',w:'Ginger',g:'F'}, {id:123,c:'name',w:'Guacamole',g:'NB'}, {id:124,c:'title',w:'Spicy',g:'NB'}, {id:125,c:'title',w:'Sir',g:'M'}, {id:126,c:'title',w:'Miss',g:'F'}, {id:127,c:'name',w:'Chicken Nugget',g:'NB'}, {id:128,c:'title',w:'Styrofoam',g:'NB'}, {id:129,c:'name',w:'Speck',g:'NB'}, {id:130,c:'name',w:'String Cheese',g:'NB'},
+        {id:131,c:'name',w:'Yin',g:'NB'}, {id:132,c:'name',w:'Yang',g:'M'}, {id:133,c:'name',w:'Malk',g:'NB'}, {id:134,c:'title',w:'The One and Only',g:'NB'}, {id:135,c:'name',w:'Jeffrey Bezos',g:'M'}, {id:136,c:'name',w:'XP Orb',g:'NB'}, {id:137,c:'name',w:'Ibuprofen',g:'NB'}
+    ];
+
+    function generateCreatureName() {
+        const names = NAME_DATA.filter(d => d.c === 'name' && d.w);
+        const base = names[Math.floor(Math.random() * names.length)];
+        let fullName = base.w;
+        let gender = base.g;
+        if (Math.random() < 0.4) {
+            const titles = NAME_DATA.filter(d => d.c === 'title' && (gender === 'NB' || d.g === 'NB' || d.g === gender));
+            if(titles.length) { const t = titles[Math.floor(Math.random() * titles.length)]; fullName = `${t.w} ${fullName}`; }
+        }
+        if (Math.random() < 0.2) {
+            const suffixes = NAME_DATA.filter(d => d.c === 'suffix' && (gender === 'NB' || d.g === 'NB' || d.g === gender));
+            if(suffixes.length) { const s = suffixes[Math.floor(Math.random() * suffixes.length)]; fullName = `${fullName}${s.w}`; }
+        }
+        return fullName;
+    }
+
+    const CREATURE_TYPES = [
+        { id: 'frog', icon: '🐸' }, { id: 'kakapo', icon: '🦜' }, { id: 'bee', icon: '🐝' }, 
+        { id: 'guinea', icon: '🐹' }, { id: 'beaver', icon: '🦫' }, { id: 'snake', icon: '🐍' },
+        { id: 'onion', icon: '🧅' }, { id: 'kitty', icon: '🐱' }, { id: 'axolotl', icon: '🦎' }, { id: 'mushroom', icon: '🍄' }
+    ];
+
+    const EGG_COLORS = [ { b: '#F5F5DC', s: '#E0D8B0' }, { b: '#E0F7FA', s: '#81D4FA' }, { b: '#FFF3E0', s: '#FFB74D' }, { b: '#F3E5F5', s: '#BA68C8' }, { b: '#E8F5E9', s: '#81C784' }, { b: '#FFFFFF', s: '#BDBDBD' } ];
+    const PALETTES = [
+        { name: "Natural", cssClass: "p-natural", threshold: 0, getColors: () => { const isGreen = Math.random() > 0.5; const h1 = isGreen ? rnd(90, 140) : rnd(20, 50); const h2 = isGreen ? rnd(90, 140) : rnd(20, 50); return { bodyColor: `hsl(${h1}, ${rnd(20, 50)}%, ${rnd(30, 80)}%)`, spotColor: `hsl(${h2}, ${rnd(20, 50)}%, ${rnd(30, 80)}%)` }; }},
+        { name: "Pastel", cssClass: "p-pastel", threshold: 10, getColors: () => { return { bodyColor: `hsl(${rnd(0, 360)}, ${rnd(70, 100)}%, ${rnd(75, 85)}%)`, spotColor: `hsl(${rnd(0, 360)}, ${rnd(70, 100)}%, ${rnd(75, 85)}%)` }; }},
+        { name: "Tropical", cssClass: "p-tropical", threshold: 20, getColors: () => { const hues = [180, 300, 90, 30, 50]; return { bodyColor: `hsl(${hues[rnd(0, 4)]}, 100%, 50%)`, spotColor: `hsl(${hues[rnd(0, 4)]}, 100%, 50%)` }; }},
+        { name: "Nebula", cssClass: "p-nebula", threshold: 30, getColors: () => { return { bodyColor: `hsl(${rnd(240, 280)}, ${rnd(60, 90)}%, ${rnd(25, 45)}%)`, spotColor: `hsl(${Math.random()>0.5?rnd(300,340):rnd(170,200)}, 100%, ${rnd(70, 85)}%)` }; }},
+        { name: "Golden", cssClass: "p-golden", threshold: 40, getColors: () => { return { bodyColor: `hsl(${rnd(35, 55)}, ${rnd(80, 100)}%, ${rnd(40, 70)}%)`, spotColor: `hsl(${rnd(35, 55)}, ${rnd(80, 100)}%, ${rnd(30, 80)}%)` }; }},
+        { name: "Jewel", cssClass: "p-jewel", threshold: 50, getColors: () => { const hues = [150, 210, 350, 280]; return { bodyColor: `hsl(${hues[rnd(0,3)]}, ${rnd(85, 100)}%, ${rnd(30, 45)}%)`, spotColor: `hsl(${hues[rnd(0,3)]}, ${rnd(85, 100)}%, ${rnd(30, 45)}%)` }; }},
+        { name: "Jarring", cssClass: "p-jarring", threshold: 60, getColors: () => { const h = rnd(0, 360); return { bodyColor: `hsl(${h}, 100%, 50%)`, spotColor: `hsl(${(h+180)%360}, 100%, 50%)` }; }}
+    ];
+    const PATTERNS = {
+        none: (c, type) => '',
+        'small-spots': (c, type) => { let svg = `<g fill="${c}">`; let count = (type === 'snake') ? 60 : 30; for(let i=0; i<count; i++) svg += `<circle cx="${Math.random()*100}" cy="${Math.random()*100}" r="2"/>`; return svg + `</g>`; },
+        'medium-spots': (c, type) => { let svg = `<g fill="${c}">`; let count = (type === 'snake') ? 24 : 12; for(let i=0; i<count; i++) svg += `<circle cx="${Math.random()*100}" cy="${Math.random()*100}" r="4"/>`; return svg + `</g>`; },
+        'big-spot': (c, type) => `<circle cx="50" cy="50" r="18" fill="${c}" opacity="0.9"/>`,
+        'heart-belly': (c, type) => { let svg = `<g fill="${c}">`; const heartPath = "M0,-5 C-3,-8 -8,-8 -8,-2 C-8,3 0,8 0,8 C0,8 8,3 8,-2 C8,-8 3,-8 0,-5 Z"; let count = (type === 'snake') ? 30 : 15; const baseScale = 0.5; for(let i=0; i<count; i++) { const x = Math.random()*100; const y = Math.random()*100; const rot = Math.random()*360; let scaleVar = (type === 'snake') ? 1 : (1 + Math.random() * 1.5); svg += `<path transform="translate(${x}, ${y}) rotate(${rot}) scale(${baseScale * scaleVar})" d="${heartPath}" />`; } return svg + `</g>`; },
+        'star-belly': (c, type) => { let svg = `<g fill="${c}">`; const starPoints = "0,-5 1.5,-1.5 5,-1.5 2,1 3,4.5 0,2.5 -3,4.5 -2,1 -5,-1.5 -1.5,-1.5"; let count = (type === 'snake') ? 30 : 15; const baseScale = 0.7; for(let i=0; i<count; i++) { const x = Math.random()*100; const y = Math.random()*100; const rot = Math.random()*360; let scaleVar = (type === 'snake') ? 1 : (1 + Math.random() * 1.5); svg += `<polygon transform="translate(${x}, ${y}) rotate(${rot}) scale(${baseScale * scaleVar})" points="${starPoints}" />`; } return svg + `</g>`; }
+    };
+    function getPupil(cx, cy, maxR, radius, color, angle, dist) { const px = cx + (Math.cos(angle) * dist); const py = cy + (Math.sin(angle) * dist); return `<circle cx="${px}" cy="${py}" r="${radius}" fill="${color}" stroke="black" stroke-width="1"/>`; }
+    const generateEgg = (b, s) => `<svg viewBox="0 0 100 100"><path d="M 50 5 Q 85 5 85 50 Q 85 95 50 95 Q 15 95 15 50 Q 15 5 50 5" fill="${b}" stroke="rgba(0,0,0,0.1)" stroke-width="2"/><circle cx="35" cy="30" r="3" fill="${s}" opacity="0.6"/><circle cx="65" cy="40" r="4" fill="${s}" opacity="0.6"/><circle cx="45" cy="60" r="5" fill="${s}" opacity="0.6"/><circle cx="70" cy="70" r="2" fill="${s}" opacity="0.6"/><circle cx="25" cy="65" r="3" fill="${s}" opacity="0.6"/></svg>`;
+
+    const SVG_GEN = {
+        frog: (b, s, p, uid, t, extraDefs='') => { const bodyPath = "M 10 65 Q 10 95 50 95 Q 90 95 90 65 Q 90 35 50 35 Q 10 35 10 65"; const eyecy = 44; const offX = Math.cos(t.pupilAngle) * t.pupilDist; const offY = Math.sin(t.pupilAngle) * t.pupilDist; let mouthSVG = ''; if (t.mouth < 0.33) { mouthSVG = '<path d="M 41 65 Q 50 75 59 65" stroke="black" stroke-width="3" fill="none" stroke-linecap="round"/>'; } else if (t.mouth < 0.66) { mouthSVG = '<path d="M 41 65 Q 50 55 59 65" stroke="black" stroke-width="3" fill="none" stroke-linecap="round"/>'; } else { mouthSVG = '<ellipse cx="56" cy="66" rx="2.5" ry="5" fill="#FF99CC" stroke="black" stroke-width="1" transform="rotate(30 56 66)"/><path d="M 41 65 L 59 65" stroke="black" stroke-width="3" fill="none" stroke-linecap="round"/>'; } return `<svg viewBox="0 0 100 100"><defs><clipPath id="clip-${uid}"><path d="${bodyPath}"/></clipPath>${extraDefs}</defs><path d="${bodyPath}" fill="${b}"/> <g clip-path="url(#clip-${uid})">${p}</g> ${mouthSVG} <circle cx="21" cy="${eyecy}" r="15" fill="${b}"/> <circle cx="79" cy="${eyecy}" r="15" fill="${b}"/> <circle cx="21" cy="${eyecy}" r="9" fill="white"/> <circle cx="79" cy="${eyecy}" r="9" fill="white"/> <circle cx="${21 + offX}" cy="${eyecy + offY}" r="6.5" fill="${s}"/> <circle cx="${79 + offX}" cy="${eyecy + offY}" r="6.5" fill="${s}"/> <circle cx="${19 + offX}" cy="${eyecy - 2 + offY}" r="1" fill="white"/> <circle cx="${77 + offX}" cy="${eyecy - 2 + offY}" r="1" fill="white"/></svg>`; },
+        bee: (b, s, p, uid, t, extraDefs='') => { const bodyPath = "M 35 40 Q 35 20 65 20 Q 95 20 95 50 Q 95 80 65 80 Q 35 80 35 50"; return `<svg viewBox="0 0 100 100"><defs><clipPath id="clip-${uid}"><path d="${bodyPath}"/></clipPath>${extraDefs}</defs><path d="M 50 35 Q 30 10 50 5 Q 70 10 50 35" fill="white" opacity="0.8" stroke="#ddd"/> <path d="M 70 35 Q 90 10 70 5 Q 50 10 70 35" fill="white" opacity="0.8" stroke="#ddd"/> <path d="${bodyPath}" fill="${b}"/> <g clip-path="url(#clip-${uid})">${p}</g> <g clip-path="url(#clip-${uid})"><path d="M 50 20 L 50 80" stroke="rgba(0,0,0,0.6)" stroke-width="8"/> <path d="M 75 20 L 75 80" stroke="rgba(0,0,0,0.6)" stroke-width="8"/></g> <circle cx="30" cy="50" r="15" fill="#222"/> <circle cx="30" cy="50" r="7" fill="white"/> ${getPupil(30, 50, 4, 3, s, t.pupilAngle, t.pupilDist)}</svg>`; },
+        beaver: (b, s, p, uid, t, extraDefs='') => { return `<svg viewBox="0 0 100 100"><defs><clipPath id="clip-${uid}"><rect x="5" y="25" width="70" height="55" rx="20" /></clipPath><mask id="mask-${uid}"><rect x="0" y="0" width="100" height="100" fill="white"/> <circle cx="21" cy="46" r="10" fill="black"/> <circle cx="59" cy="46" r="10" fill="black"/></mask>${extraDefs}</defs><ellipse cx="65" cy="52" rx="25" ry="12" fill="#5D4037" transform="rotate(-10 65 52)"/> <circle cx="10" cy="35" r="8" fill="${b}" filter="brightness(0.7)"/> <circle cx="70" cy="35" r="8" fill="${b}" filter="brightness(0.7)"/> <rect x="5" y="25" width="70" height="55" rx="20" fill="${b}"/> <g clip-path="url(#clip-${uid})" mask="url(#mask-${uid})">${p}</g> <circle cx="21" cy="46" r="5" fill="black"/><circle cx="19" cy="44" r="1.5" fill="white"/> <circle cx="59" cy="46" r="5" fill="black"/><circle cx="57" cy="44" r="1.5" fill="white"/> <path d="M 38 50 L 40 53 L 42 50" stroke="black" stroke-width="2" fill="none"/> <rect x="34" y="58" width="5" height="8" fill="white"/> <rect x="41" y="58" width="5" height="8" fill="white"/></svg>`; },
+        kakapo: (b, s, p, uid, t, extraDefs='') => { return `<svg viewBox="0 0 100 100"><g transform="rotate(-15 50 50)"><defs><clipPath id="clip-${uid}"><path d="M 50 20 Q 80 20 80 60 Q 80 90 50 90 Q 20 90 20 60 Q 20 20 50 20 Z"/></clipPath><mask id="mask-${uid}"><rect x="0" y="0" width="100" height="100" fill="white"/> <circle cx="40" cy="35" r="9" fill="black"/></mask>${extraDefs}</defs><path d="M 65 75 L 90 85 L 70 60 Z" fill="${b}"/> <path d="M 50 20 Q 80 20 80 60 Q 80 90 50 90 Q 20 90 20 60 Q 20 20 50 20 Z" fill="${b}"/> <g clip-path="url(#clip-${uid})" mask="url(#mask-${uid})">${p}</g> <path d="M 28 34 L 15 41 L 28 44 Z" fill="#FFEB3B" stroke="black" stroke-width="1" stroke-linejoin="round"/> <circle cx="40" cy="35" r="5" fill="black"/> <circle cx="38" cy="33" r="2" fill="white"/> <circle cx="42" cy="37" r="1" fill="white" opacity="0.8"/> <path d="M 45 55 Q 60 70 30 70" fill="none" stroke="rgba(0,0,0,0.1)" stroke-width="2"/></g></svg>`; },
+        snake: (b, s, p, uid, t, extraDefs='') => { return `<svg viewBox="0 0 100 100"><defs><mask id="snake-body-${uid}"><path d="M 20 85 Q 30 95 50 75 T 80 40" stroke="white" stroke-width="22" fill="none" stroke-linecap="round"/></mask>${extraDefs}</defs><path d="M 20 85 Q 30 95 50 75 T 80 40" stroke="${b}" stroke-width="22" fill="none" stroke-linecap="round"/> <g mask="url(#snake-body-${uid})">${p}</g> <circle cx="80" cy="40" r="14" fill="${b}"/> <circle cx="85" cy="35" r="10" fill="white"/> ${getPupil(85, 35, 4, 4.4, s, t.pupilAngle, t.pupilDist)} <path d="M 92 42 L 100 38 M 92 42 L 100 46" stroke="red" stroke-width="2"/></svg>`; },
+        guinea: (b, s, p, uid, t, extraDefs='') => { return `<svg viewBox="0 0 100 100"><defs><clipPath id="clip-${uid}"><ellipse cx="50" cy="60" rx="40" ry="32"/></clipPath><mask id="mask-${uid}"><rect x="0" y="0" width="100" height="100" fill="white"/> <circle cx="27" cy="58" r="9" fill="black"/> <circle cx="73" cy="58" r="9" fill="black"/></mask>${extraDefs}</defs><ellipse cx="50" cy="60" rx="40" ry="32" fill="${b}"/> <g clip-path="url(#clip-${uid})" mask="url(#mask-${uid})">${p}</g> <circle cx="20" cy="47" r="8" fill="${b}" filter="brightness(0.8)"/> <circle cx="80" cy="47" r="8" fill="${b}" filter="brightness(0.8)"/> <circle cx="27" cy="58" r="4.5" fill="black"/><circle cx="25" cy="56" r="1.5" fill="white"/> <circle cx="73" cy="58" r="4.5" fill="black"/><circle cx="71" cy="56" r="1.5" fill="white"/> <path d="M 48 61 L 50 64 L 52 61" stroke="black" stroke-width="2" fill="none"/></svg>`; },
+        onion: (b, s, p, uid, t, extraDefs='') => { const bodyPath = "M 50 15 Q 90 60 80 85 Q 50 100 20 85 Q 10 60 50 15"; return `<svg viewBox="0 0 100 100"><defs><clipPath id="clip-${uid}"><path d="${bodyPath}"/></clipPath>${extraDefs}</defs><path d="M 50 15 Q 45 5 40 5 M 50 15 Q 55 5 60 5" stroke="#4CAF50" stroke-width="4" fill="none"/> <path d="${bodyPath}" fill="${b}"/> <g clip-path="url(#clip-${uid})">${p}</g> <circle cx="25" cy="50" r="10" fill="white"/> <circle cx="25" cy="50" r="3" fill="black" transform="translate(${t.onionL.x}, ${t.onionL.y})"/> <circle cx="75" cy="50" r="10" fill="white"/> <circle cx="75" cy="50" r="3" fill="black" transform="translate(${t.onionR.x}, ${t.onionR.y})"/></svg>`; },
+        kitty: (b, s, p, uid, t, extraDefs='') => { return `<svg viewBox="0 0 100 100"><defs><clipPath id="clip-${uid}"><rect x="15" y="35" width="70" height="50" rx="20" /></clipPath>${extraDefs}</defs> <path d="M 20 40 L 25 15 L 45 40 Z" fill="${b}"/> <path d="M 80 40 L 75 15 L 55 40 Z" fill="${b}"/> <rect x="15" y="35" width="70" height="50" rx="20" fill="${b}"/> <g clip-path="url(#clip-${uid})">${p}</g> <circle cx="35" cy="55" r="3" fill="black"/> <circle cx="65" cy="55" r="3" fill="black"/> <path d="M 47 53 L 53 53 L 50 58 Z" fill="pink"/> <path d="M 20 55 L 5 50 M 20 58 L 5 60 M 80 55 L 95 50 M 80 58 L 95 60" stroke="black" stroke-width="1" opacity="0.5"/></svg>`; },
+        axolotl: (b, s, p, uid, t, extraDefs='') => { return `<svg viewBox="0 0 100 100"><defs><clipPath id="clip-${uid}"><rect x="20" y="25" width="60" height="60" rx="20" /></clipPath>${extraDefs}</defs> <path d="M 25 40 L 10 30 M 25 50 L 10 50 M 25 60 L 10 70 M 75 40 L 90 30 M 75 50 L 90 50 M 75 60 L 90 70" stroke="#E91E63" stroke-width="4" stroke-linecap="round"/> <rect x="20" y="25" width="60" height="60" rx="20" fill="${b}"/> <g clip-path="url(#clip-${uid})">${p}</g> <circle cx="35" cy="50" r="3" fill="black"/> <circle cx="65" cy="50" r="3" fill="black"/> <path d="M 40 60 Q 50 70 60 60" stroke="black" stroke-width="2" fill="none"/></svg>`; },
+        mushroom: (b, s, p, uid, t, extraDefs='') => { return `<svg viewBox="0 0 100 100"><rect x="35" y="50" width="30" height="40" rx="5" fill="white"/> <circle cx="45" cy="65" r="2" fill="black"/> <circle cx="55" cy="65" r="2" fill="black"/> <defs><clipPath id="clip-${uid}"><path d="M 10 50 Q 50 -10 90 50 Z"/></clipPath>${extraDefs}</defs> <path d="M 10 50 Q 50 -10 90 50 Z" fill="${b}"/> <g clip-path="url(#clip-${uid})">${p}</g></svg>`; }
+    };
+
+    let state = { todos: [], collection: [], logs: [], containerHeight: 600 };
+
+    function load() {
+        const grid = document.getElementById('quickGrid');
+        grid.innerHTML = CREATURE_TYPES.map(c => `<div class="quick-btn" onclick="quickHatch('${c.id}')">${c.icon}</div>`).join('');
+
+        const saved = localStorage.getItem('reportCardMenagerie_v35');
+        if (saved) {
+            state = JSON.parse(saved);
+            if(!state.todos) state.todos = [];
+            if(!state.logs) state.logs = [];
+            if(!state.containerHeight) state.containerHeight = 600;
+            state.collection.forEach(c => {
+                if (!c.traits) c.traits = { mouth: Math.random(), pupilAngle: Math.random() * Math.PI * 2, pupilDist: Math.random() * 4, onionL: {x: Math.random()*4-2, y: Math.random()*4-2}, onionR: {x: Math.random()*4-2, y: Math.random()*4-2} };
+                if (!c.cachedPatternSVG) { const patternGen = PATTERNS[c.pattern] || PATTERNS['none']; c.cachedPatternSVG = patternGen(c.spotColor, c.type); }
+                if (c.posX === undefined) { c.posX = Math.random() * 80 + 5; c.posY = Math.random() * 80 + 5; }
+            });
+            save();
+        } 
+        renderTodoList();
+        renderHabitat();
+        renderPaletteTracker();
+        renderLog();
+        checkExpandButton();
+        startRoaming();
+    }
+
+    function save() { localStorage.setItem('reportCardMenagerie_v35', JSON.stringify(state)); }
+
+    function startRoaming() {
+        setInterval(() => {
+            let changed = false;
+            state.collection.forEach(c => {
+                if (c.hatched) {
+                    let newX = c.posX + (Math.random() * 40 - 20); let newY = c.posY + (Math.random() * 40 - 20);
+                    c.posX = Math.max(0, Math.min(90, newX)); c.posY = Math.max(0, Math.min(90, newY));
+                    changed = true;
+                }
+            });
+            if(changed) { 
+                save(); 
+                state.collection.forEach(c => {
+                    const el = document.getElementById(`creature-${c.id}`);
+                    if(el) {
+                        el.style.left = `${c.posX}%`; el.style.top = `${c.posY}%`; el.style.zIndex = Math.floor(c.posY);
+                    }
+                });
+            }
+        }, 4000);
+    }
+
+    function quickHatch(type) { addCreatureLogic(type, "Quick Hatch"); }
+
+    function runBatchAdd() {
+        const select = document.getElementById('batchCreatureSelect');
+        const taskBase = validateInput(document.getElementById('batchTaskName').value, 50).trim();
+        const listText = document.getElementById('batchList').value;
+        const type = select.value;
+        if(!taskBase || !listText) { alert("Please fill in task name and student list."); return; }
+        const names = listText.split(/[\n,]+/).map(n => validateInput(n, 50).trim()).filter(n => n);
+        if(names.length === 0) { alert("No valid names found."); return; }
+        names.forEach(name => {
+            state.todos.push({ id: Math.random().toString(36).substr(2, 9), text: `${taskBase} - ${name}`, type: type, completed: false });
+        });
+        document.getElementById('batchList').value = '';
+        document.getElementById('batchTaskName').value = '';
+        save(); renderTodoList();
+    }
+
+    function completeTodo(id) {
+        const todo = state.todos.find(t => t.id === id);
+        if(!todo || todo.completed) return;
+        todo.completed = true;
+        addCreatureLogic(todo.type, todo.text);
+        save(); renderTodoList();
+    }
+
+    function addCreatureLogic(type, taskName) {
+        const totalScore = state.collection.length + 1;
+        if (totalScore > 0 && totalScore % 10 === 0 && totalScore <= 60) {
+            const unlockedPalette = PALETTES.find(p => p.threshold === totalScore);
+            if (unlockedPalette) showNotification(unlockedPalette.name);
+        }
+        const availablePalettes = PALETTES.filter(p => totalScore >= p.threshold);
+        const selectedPalette = availablePalettes[Math.floor(Math.random() * availablePalettes.length)];
+        const colors = selectedPalette.getColors();
+        const patterns = ['none', 'small-spots', 'small-spots', 'medium-spots', 'big-spot', 'heart-belly', 'star-belly'];
+        const randomPattern = patterns[Math.floor(Math.random() * patterns.length)];
+        const uid = Math.random().toString(36).substr(2, 9);
+        const isShiny = Math.random() < 0.05; const isOmbre = Math.random() < 0.10; 
+        const randomScale = 0.85 + (Math.random() * 0.30);
+        const eggStyle = EGG_COLORS[Math.floor(Math.random() * EGG_COLORS.length)];
+        const traits = { mouth: Math.random(), pupilAngle: Math.random() * Math.PI * 2, pupilDist: Math.random() * 4, onionL: {x: Math.random()*4-2, y: Math.random()*4-2}, onionR: {x: Math.random()*4-2, y: Math.random()*4-2} };
+        const patternGen = PATTERNS[randomPattern] || PATTERNS['none'];
+        const cachedPatternSVG = patternGen(colors.spotColor, type);
+
+        state.collection.push({
+            id: uid, type: type, bodyColor: colors.bodyColor, spotColor: colors.spotColor, speed: (Math.random() * 2) + 3, scale: randomScale, pattern: randomPattern, cachedPatternSVG: cachedPatternSVG, traits: traits,
+            timestamp: Date.now(), taskName: taskName, paletteName: selectedPalette.name, shiny: isShiny, ombre: isOmbre, eggColor: eggStyle, hatched: false, hatchTime: Date.now() + (5 * 60 * 1000),
+            posX: Math.random() * 90, posY: Math.random() * 90
+        });
+        save(); renderHabitat(); renderPaletteTracker(); checkExpandButton();
+    }
+
+    function renderTodoList() {
+        const list = document.getElementById('todoList');
+        list.innerHTML = '';
+        if (state.todos.length === 0) { list.innerHTML = '<div style="color:#aaa; text-align:center; padding:20px;">No tasks yet. Use Batch Create below!</div>'; return; }
+        const sortedTodos = [...state.todos].sort((a, b) => a.completed - b.completed);
+        const emojis = { frog:'🐸', bee:'🐝', snake:'🐍', guinea:'🐹', beaver:'🦫', kakapo:'🦜', onion:'🧅', kitty:'🐱', axolotl:'🦎', mushroom:'🍄' };
+        sortedTodos.forEach(todo => {
+            const div = document.createElement('div');
+            div.className = `todo-item ${todo.completed ? 'completed' : ''}`;
+            div.onclick = () => completeTodo(todo.id);
+            const span = document.createElement('span');
+            span.textContent = emojis[todo.type];
+            const strong = document.createElement('strong');
+            strong.textContent = escapeHtml(todo.text);
+            div.appendChild(span);
+            div.appendChild(strong);
+            list.appendChild(div);
+        });
+        document.getElementById('totalCount').innerText = state.collection.length;
+    }
+
+    function checkExpandButton() {
+        const btn = document.getElementById('expandBtn');
+        if (state.collection.length >= 40) { btn.style.display = 'block'; } else { btn.style.display = 'none'; }
+    }
+
+    function triggerExpansion() {
+        state.containerHeight += 400;
+        save(); renderHabitat();
+    }
+
+    function addLog(text) {
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        state.logs.unshift({ time: timeStr, text: text });
+        if (state.logs.length > 50) state.logs.pop();
+        save(); renderLog();
+    }
+
+    function renderLog() {
+        const container = document.getElementById('logContainer');
+        container.innerHTML = '';
+        if(state.logs.length === 0) { container.innerHTML = '<div style="color:#999; font-style:italic; font-size:0.9em;">No hatches recorded yet...</div>'; return; }
+        state.logs.forEach(log => {
+            const entry = document.createElement('div'); 
+            entry.className = 'log-entry'; 
+            const timestamp = document.createElement('span');
+            timestamp.className = 'log-timestamp';
+            timestamp.textContent = log.time;
+            const text = document.createElement('span');
+            text.className = 'log-text';
+            text.textContent = log.text;
+            entry.appendChild(timestamp);
+            entry.appendChild(text);
+            container.appendChild(entry);
+        });
+    }
+
+    function renderHabitat() {
+        const habitat = document.getElementById('habitat');
+        const container = document.getElementById('habitatContainer');
+        
+        container.style.height = `${state.containerHeight}px`;
+
+        const currentIds = state.collection.map(c => `creature-${c.id}`);
+        Array.from(habitat.children).forEach(child => {
+            if (!currentIds.includes(child.id)) habitat.removeChild(child);
+        });
+
+        state.collection.forEach(data => {
+            let wrapper = document.getElementById(`creature-${data.id}`);
+            
+            if (!wrapper) {
+                wrapper = document.createElement('div');
+                wrapper.id = `creature-${data.id}`;
+                wrapper.className = 'creature-wrapper';
+                habitat.appendChild(wrapper);
+                
+                wrapper.style.left = `${data.posX}%`; wrapper.style.top = `${data.posY}%`; wrapper.style.zIndex = Math.floor(data.posY);
+                const baseSize = 65; 
+                const size = data.hatched ? (baseSize * (data.scale || 1)) : baseSize;
+                wrapper.style.width = `${size}px`; wrapper.style.height = `${size}px`;
+                
+                if (data.shiny) { wrapper.classList.add('is-shiny'); wrapper.style.setProperty('--spot-glow', data.spotColor); wrapper.style.filter = `drop-shadow(0 0 5px ${data.spotColor})`; }
+                
+                updateCreatureContent(wrapper, data);
+            } else {
+                if (data.hatched && wrapper.dataset.status !== 'hatched') {
+                    const baseSize = 65;
+                    const size = baseSize * (data.scale || 1);
+                    wrapper.style.width = `${size}px`; wrapper.style.height = `${size}px`;
+                    updateCreatureContent(wrapper, data);
+                }
+            }
+        });
+    }
+
+    function updateCreatureContent(wrapper, data) {
+        wrapper.innerHTML = '';
+        
+        const oldTimer = wrapper.querySelector('.egg-timer');
+        if(oldTimer) wrapper.removeChild(oldTimer);
+        wrapper.onmouseenter = null;
+        wrapper.onmouseleave = null;
+        wrapper.onclick = null;
+
+        if (!data.hatched) {
+            wrapper.dataset.status = 'egg';
+            const eggB = data.eggColor ? data.eggColor.b : data.bodyColor;
+            const eggS = data.eggColor ? data.eggColor.s : data.spotColor;
+            wrapper.innerHTML = generateEgg(eggB, eggS); 
+            wrapper.className = "creature-wrapper egg-mode";
+            if (data.shiny) wrapper.classList.add('is-shiny');
+            
+            wrapper.onmouseenter = (e) => handleEggEnter(e, wrapper, data.hatchTime); 
+            wrapper.onmouseleave = (e) => handleEggLeave(e, wrapper);
+            wrapper.onclick = () => hatchCreature(data.id);
+            if(data.shiny) addSparkles(wrapper);
+            return;
+        }
+
+        wrapper.dataset.status = 'hatched';
+        wrapper.className = "creature-wrapper just-hatched";
+        if (data.shiny) { wrapper.classList.add('is-shiny'); wrapper.style.filter = `drop-shadow(0 0 5px ${data.spotColor})`; }
+
+        let bodyFill = data.bodyColor; let extraDefs = '';
+        if (data.ombre) {
+            const match = data.bodyColor.match(/hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)/);
+            if (match) {
+                const h = parseInt(match[1]), s = parseInt(match[2]), l = parseInt(match[3]);
+                const lDark = Math.max(0, l - 20), lLight = Math.min(100, l + 20);
+                extraDefs = `<linearGradient id="grad-${data.id}" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:hsl(${h},${s}%,${lLight}%)" /><stop offset="100%" style="stop-color:hsl(${h},${s}%,${lDark}%)" /></linearGradient>`;
+                bodyFill = `url(#grad-${data.id})`;
+            }
+        }
+
+        const svgString = SVG_GEN[data.type](bodyFill, data.spotColor, data.cachedPatternSVG, data.id, data.traits, extraDefs);
+        wrapper.innerHTML = svgString;
+        if(data.shiny) addSparkles(wrapper);
+        
+        wrapper.title = `${data.generatedName ? data.generatedName : 'Unknown Creature'}\n\nTask: ${data.taskName}\nPalette: ${data.paletteName}\nPattern: ${data.pattern}${data.shiny ? '\n✨ SHINY! ✨' : ''}${data.ombre ? '\n🌈 OMBRE! 🌈' : ''}`;
+        
+        if (data.type === 'bee' || data.type === 'onion') { wrapper.style.animation = `hover 0.5s infinite ease-in-out alternate`; } 
+        else if (data.type === 'kakapo' || data.type === 'guinea' || data.type === 'kitty') { wrapper.style.animation = `hop ${data.speed}s infinite ease-in-out`; } 
+        else { wrapper.style.animation = `float ${data.speed}s infinite ease-in-out`; }
+    }
+
+    function addSparkles(wrapper) {
+        const sparkles = document.createElement('div'); sparkles.className = 'sparkles';
+        sparkles.innerHTML = `<div class="sparkle-star" style="top:10%; left:20%; animation-delay:0s"></div><div class="sparkle-star" style="top:70%; left:80%; animation-delay:0.5s"></div><div class="sparkle-star" style="top:30%; left:85%; animation-delay:1s"></div>`;
+        wrapper.appendChild(sparkles);
+    }
+
+    function hatchCreature(id) {
+        const creature = state.collection.find(c => c.id === id);
+        if (creature && !creature.hatched) {
+            creature.hatched = true;
+            if (!creature.generatedName) {
+                creature.generatedName = generateCreatureName();
+                addLog(`A ${creature.type} hatched! Welcome, ${creature.generatedName}!`);
+            }
+            save();
+            renderHabitat(); 
+        }
+    }
+
+    let timerInterval = null;
+    function handleEggEnter(e, wrapper, hatchTime) {
+        if(wrapper.querySelector('.egg-timer')) return; 
+        const timerBubble = document.createElement('div'); timerBubble.className = 'egg-timer'; wrapper.appendChild(timerBubble);
+        const updateTimer = () => {
+            const timeLeft = hatchTime - Date.now();
+            if (timeLeft <= 0) { clearInterval(timerInterval); if(wrapper.contains(timerBubble)) wrapper.removeChild(timerBubble); const dataId = state.collection.find(c => c.hatchTime === hatchTime).id; hatchCreature(dataId); return; }
+            const mins = Math.floor(timeLeft / 60000); const secs = Math.floor((timeLeft % 60000) / 1000);
+            timerBubble.innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        };
+        updateTimer();
+        timerInterval = setInterval(updateTimer, 1000);
+    }
+
+    function handleEggLeave(e, wrapper) { if (timerInterval) clearInterval(timerInterval); const bubble = wrapper.querySelector('.egg-timer'); if (bubble) wrapper.removeChild(bubble); }
+    function showNotification(text) { const notif = document.getElementById('notification'); notif.innerText = `✨ Palette Unlocked: ${text}! ✨`; notif.classList.add('show'); setTimeout(() => notif.classList.remove('show'), 4000); }
+    function renderPaletteTracker() {
+        const tracker = document.getElementById('paletteTracker'); const score = state.collection.length; tracker.innerHTML = '';
+        PALETTES.forEach(p => {
+            const unlocked = score >= p.threshold; const badge = document.createElement('div'); badge.className = `palette-badge ${p.cssClass}`;
+            if(unlocked) badge.classList.add('unlocked'); badge.innerText = p.name; badge.title = unlocked ? "Unlocked!" : `Unlocks at ${p.threshold}`; tracker.appendChild(badge);
+        });
+    }
+    function hardReset() { if(confirm("Delete all creatures?")) { localStorage.removeItem('reportCardMenagerie_v35'); location.reload(); } }
+    function handleEnter(e) { if (e.key === 'Enter') runBatchAdd(); }
+
+    setInterval(() => {
+        const now = Date.now();
+        let changed = false;
+        state.collection.forEach(c => {
+            if (!c.hatched && now > c.hatchTime) {
+                c.hatched = true;
+                if (!c.generatedName) { c.generatedName = generateCreatureName(); addLog(`A ${c.type} hatched! Welcome, ${c.generatedName}!`); }
+                changed = true;
+            }
+        });
+        if (changed) { save(); renderHabitat(); }
+    }, 5000);
+
+    load();
+</script>
+</body>
+</html>
