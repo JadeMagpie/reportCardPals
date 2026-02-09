@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Report Card Menagerie v35 🥚✨ (Secure)</title>
+    <title>Report Card Menagerie v41 🥚✨ (Secure)</title>
     <style>
         :root {
             --bg-color: #fff9c4;
@@ -82,6 +82,7 @@
             transition: top 20s linear, left 20s linear, transform 0.2s; 
             will-change: top, left;
         }
+        .creature-wrapper::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 110%; height: 110%; background: radial-gradient(circle, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 70%, transparent 100%); border-radius: 50%; z-index: -1; }
         .creature-wrapper:hover { transform: scale(1.3) !important; z-index: 9999 !important; }
 
         /* --- EFFECTS --- */
@@ -130,6 +131,24 @@
         summary { cursor: pointer; color: #666; font-weight: bold; margin-bottom: 10px; }
         textarea { height: 80px; resize: vertical; margin-bottom: 5px; }
         .reset-link { color: #ff5252; text-decoration: underline; cursor: pointer; font-size: 0.8em; text-align: center; margin-top: 10px; display: block; }
+        
+        /* --- PROFILE MODAL --- */
+        .profile-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border: 3px solid var(--wood); border-radius: 15px; padding: 25px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); z-index: 10000; max-width: 400px; width: 90%; max-height: 80vh; overflow-y: auto; }
+        .profile-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; }
+        .profile-close { position: absolute; top: 10px; right: 15px; font-size: 28px; font-weight: bold; cursor: pointer; color: #999; }
+        .profile-close:hover { color: #333; }
+        .profile-creature { display: flex; justify-content: center; margin-bottom: 20px; width: 120px; height: 120px; margin-left: auto; margin-right: auto; }
+        .profile-creature svg { width: 100%; height: 100%; }
+        .profile-info { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .profile-item { display: flex; flex-direction: column; }
+        .profile-item-label { font-weight: bold; color: var(--wood-dark); font-size: 0.85em; margin-bottom: 4px; }
+        .profile-item-value { color: #333; font-size: 0.95em; }
+        .profile-name { grid-column: 1 / -1; font-size: 1.3em; font-weight: bold; color: var(--accent); text-align: center; margin-bottom: 10px; }
+        .profile-special { grid-column: 1 / -1; background: #fffbea; padding: 10px; border-radius: 8px; border-left: 4px solid var(--secondary); }
+        .log-name { cursor: pointer; font-weight: bold; color: var(--accent); transition: all 0.2s; }
+        .log-name:hover { text-decoration: underline; color: var(--secondary); }
+        
+        .profile-thought { grid-column: 1 / -1; background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); padding: 12px; border-radius: 8px; border-left: 4px solid #4CAF50; font-style: italic; color: #2e7d32; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -137,7 +156,7 @@
     <div id="notification">✨ Palette Unlocked! ✨</div>
 
     <div class="header-container">
-        <h1>Report Card Menagerie v35 🥚✨ (Secure)</h1>
+        <h1>Report Card Menagerie v41 🥚✨ (Secure)</h1>
         <div class="palette-tracker" id="paletteTracker"></div>
     </div>
     
@@ -202,6 +221,132 @@
         return (text || '').substring(0, maxLength).trim();
     }
 
+    const COMPLETE_THOUGHTS = [
+        'is thinking about fuzzy socks',
+        'is wondering about warm blankets',
+        'is dreaming of hot cocoa',
+        'is considering the meaning of life',
+        'is pondering why the sky is blue',
+        'is fascinated by ancient Rome',
+        'is curious about outer space',
+        'keeps thinking about pizza',
+        'wonders if frogs can fly',
+        'is obsessed with video games',
+        'cannot stop thinking about ice cream',
+        'is daydreaming about adventures',
+        'is contemplating whether clouds think',
+        'is wondering about what dreams mean',
+        'is thinking about the meaning of friendship',
+        'is pondering the nature of happiness',
+        'is fascinated by what infinity looks like',
+        'is curious if mountains get lonely',
+        'keeps thinking about the secret of trees',
+        'wonders about the color of Tuesday',
+        'is dreaming of becoming an astronaut',
+        'is considering starting a band',
+        'is thinking about learning to juggle',
+        'is pondering whether to write a novel',
+        'is wondering about opening a bakery',
+        'is fascinated by the moon',
+        'is curious about deep oceans',
+        'keeps thinking about forgotten libraries',
+        'is daydreaming of lost cities',
+        'wonders if penguins wear tuxedos on purpose',
+        'is thinking about what dolphins dream about',
+        'is wondering if squirrels plan parties',
+        'is pondering what owls know about secrets',
+        'is fascinated by whether birds gossip',
+        'is curious about the politics of ant colonies',
+        'is thinking about dancing robots',
+        'is wondering about sentient rocks',
+        'is pondering backwards clocks',
+        'is fascinated by purple triangles',
+        'keeps thinking about invisible sandwiches',
+        'is daydreaming of singing teapots',
+        'wonders about tap-dancing bananas',
+        'is thinking about upside-down gravity',
+        'is wondering if furniture has feelings',
+        'is pondering angry vegetables',
+        'is fascinated by gossiping pencils',
+        'is curious about rebellious dust',
+        'is thinking about the taste of silence',
+        'is wondering about thoughtful rainbows',
+        'keeps thinking about philosophical socks',
+        'is daydreaming of edible chairs',
+        'wonders if octopuses are secretly geniuses',
+        'is thinking about the intelligence of bees',
+        'is wondering what bugs gossip about',
+        'is pondering if ants have politics',
+        'is fascinated by whether dolphins are funny',
+        'is curious about what otters think about',
+        'is thinking about learning origami',
+        'is wondering about taking up knitting',
+        'is pondering whether to start a club',
+        'is fascinated by the idea of writing a song',
+        'keeps thinking about painting a mural',
+        'is daydreaming of starting a detective agency',
+        'wonders about the meaning of art',
+        'is thinking about the meaning of science',
+        'is wondering about the meaning of math',
+        'is pondering why wind blows',
+        'is fascinated by how lightning forms',
+        'is curious about why snow melts',
+        'keeps thinking about why leaves fall',
+        'is daydreaming of why rainbows appear',
+        'wonders why clocks tick',
+        'is thinking about why bells ring',
+        'is wondering why stars twinkle',
+        'is pondering why waves crash',
+        'is fascinated by echoes',
+        'is curious about reflections',
+        'is thinking about shadows',
+        'keeps thinking about the concept of time',
+        'is wondering if colors have feelings',
+        'is pondering what happens after rain',
+        'is fascinated by lighthouses',
+        'is curious about ancient castles',
+        'is thinking about mysterious gardens',
+        'is wondering about traveling the world',
+        'keeps thinking about climbing mountains',
+        'is daydreaming of exploring caves',
+        'wonders about hidden temples',
+        'is thinking about the wonders of museums',
+        'is wondering about concerts and festivals',
+        'is pondering the magic of theater',
+        'is fascinated by music boxes',
+        'is curious about carousels',
+        'keeps thinking about their best friend',
+        'is daydreaming of making new friends',
+        'wonders what their reflection is thinking',
+        'is thinking about pen pals',
+        'is wondering about meeting strangers',
+        'is thinking about rainy days',
+        'is wondering about sunny weather',
+        'is pondering the weekend',
+        'keeps thinking about breakfast',
+        'is dreaming of comfortable chairs',
+        'is wondering about soft blankets',
+        'is fascinated by pillow forts',
+        'is curious about what cats think',
+        'is thinking about whether bees argue',
+        'is wondering about floating staplers',
+        'is pondering time-traveling socks',
+        'is fascinated by silent screams',
+        'is curious about backwards music',
+        'has decided they loathe football.',
+        'is thinking about the secret lives of pigeons.',
+        'is considering whether or not to start a podcast about cheese.',
+        'is wondering what the word "moist" really means.',
+        'is feeling really proud of their keeper for completing so many tasks.',
+        'is thinking about how to express their gratitude to their keeper for taking such good care of them.',
+        'is grumpy today because someone bumped into their collection of rare and valuable rocks.',
+        'is in the mood to start counting all the blades of grass in the backyard, but is worried about losing count after 100.'
+    ];
+
+    function generateThought() {
+        return COMPLETE_THOUGHTS[Math.floor(Math.random() * COMPLETE_THOUGHTS.length)];
+    }
+
     const NAME_DATA = [
         {id:1,c:'title',w:'Professor',g:'NB'}, {id:2,c:'title',w:'Commander',g:'NB'}, {id:3,c:'title',w:'Doctor',g:'NB'}, {id:4,c:'title',w:'The Honorable',g:'NB'}, {id:5,c:'title',w:'Lady',g:'F'}, {id:6,c:'title',w:'Mister',g:'M'}, {id:7,c:'title',w:'His Excellency, King',g:'M'}, {id:8,c:'title',w:'Her Majesty, Queen',g:'F'}, {id:9,c:'title',w:'Lord',g:'M'},
         {id:10,c:'name',w:'Windex',g:'NB'}, {id:11,c:'name',w:'Chlorox',g:'NB'}, {id:12,c:'name',w:'Wal-Mart',g:'NB'}, {id:13,c:'name',w:'Valvoline',g:'M'}, {id:14,c:'name',w:'Meatball',g:'M'}, {id:15,c:'title',w:'Headmistress',g:'F'}, {id:16,c:'name',w:'Pipecleaner',g:'NB'}, {id:17,c:'name',w:'Hamsteak',g:'M'}, {id:18,c:'name',w:'Petunia',g:'F'}, {id:19,c:'name',w:'Peloton',g:'NB'}, {id:20,c:'name',w:'Pookie',g:'F'},
@@ -263,7 +408,7 @@
     const generateEgg = (b, s) => `<svg viewBox="0 0 100 100"><path d="M 50 5 Q 85 5 85 50 Q 85 95 50 95 Q 15 95 15 50 Q 15 5 50 5" fill="${b}" stroke="rgba(0,0,0,0.1)" stroke-width="2"/><circle cx="35" cy="30" r="3" fill="${s}" opacity="0.6"/><circle cx="65" cy="40" r="4" fill="${s}" opacity="0.6"/><circle cx="45" cy="60" r="5" fill="${s}" opacity="0.6"/><circle cx="70" cy="70" r="2" fill="${s}" opacity="0.6"/><circle cx="25" cy="65" r="3" fill="${s}" opacity="0.6"/></svg>`;
 
     const SVG_GEN = {
-        frog: (b, s, p, uid, t, extraDefs='') => { const bodyPath = "M 10 65 Q 10 95 50 95 Q 90 95 90 65 Q 90 35 50 35 Q 10 35 10 65"; const eyecy = 44; const offX = Math.cos(t.pupilAngle) * t.pupilDist; const offY = Math.sin(t.pupilAngle) * t.pupilDist; let mouthSVG = ''; if (t.mouth < 0.33) { mouthSVG = '<path d="M 41 65 Q 50 75 59 65" stroke="black" stroke-width="3" fill="none" stroke-linecap="round"/>'; } else if (t.mouth < 0.66) { mouthSVG = '<path d="M 41 65 Q 50 55 59 65" stroke="black" stroke-width="3" fill="none" stroke-linecap="round"/>'; } else { mouthSVG = '<ellipse cx="56" cy="66" rx="2.5" ry="5" fill="#FF99CC" stroke="black" stroke-width="1" transform="rotate(30 56 66)"/><path d="M 41 65 L 59 65" stroke="black" stroke-width="3" fill="none" stroke-linecap="round"/>'; } return `<svg viewBox="0 0 100 100"><defs><clipPath id="clip-${uid}"><path d="${bodyPath}"/></clipPath>${extraDefs}</defs><path d="${bodyPath}" fill="${b}"/> <g clip-path="url(#clip-${uid})">${p}</g> ${mouthSVG} <circle cx="21" cy="${eyecy}" r="15" fill="${b}"/> <circle cx="79" cy="${eyecy}" r="15" fill="${b}"/> <circle cx="21" cy="${eyecy}" r="9" fill="white"/> <circle cx="79" cy="${eyecy}" r="9" fill="white"/> <circle cx="${21 + offX}" cy="${eyecy + offY}" r="6.5" fill="${s}"/> <circle cx="${79 + offX}" cy="${eyecy + offY}" r="6.5" fill="${s}"/> <circle cx="${19 + offX}" cy="${eyecy - 2 + offY}" r="1" fill="white"/> <circle cx="${77 + offX}" cy="${eyecy - 2 + offY}" r="1" fill="white"/></svg>`; },
+        frog: (b, s, p, uid, t, extraDefs='') => { const bodyPath = "M 10 65 Q 10 95 50 95 Q 90 95 90 65 Q 90 35 50 35 Q 10 35 10 65"; const eyecy = 44; const offX = Math.cos(t.pupilAngle) * t.pupilDist; const offY = Math.sin(t.pupilAngle) * t.pupilDist; let mouthSVG = ''; if (t.mouth < 0.33) { mouthSVG = '<path d="M 41 65 Q 50 75 59 65" stroke="black" stroke-width="3" fill="none" stroke-linecap="round"/>'; } else if (t.mouth < 0.66) { mouthSVG = '<path d="M 41 65 Q 50 55 59 65" stroke="black" stroke-width="3" fill="none" stroke-linecap="round"/>'; } else { mouthSVG = '<path d="M 41 65 L 59 65" stroke="black" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M 50 65 Q 46 72 50 76 Q 54 72 50 65" fill="#FF99CC" stroke="black" stroke-width="1" stroke-linejoin="round"/>'; } return `<svg viewBox="0 0 100 100"><defs><clipPath id="clip-${uid}"><path d="${bodyPath}"/></clipPath>${extraDefs}</defs><path d="${bodyPath}" fill="${b}"/> <g clip-path="url(#clip-${uid})">${p}</g> ${mouthSVG} <circle cx="21" cy="${eyecy}" r="15" fill="${b}"/> <circle cx="79" cy="${eyecy}" r="15" fill="${b}"/> <circle cx="21" cy="${eyecy}" r="9" fill="white"/> <circle cx="79" cy="${eyecy}" r="9" fill="white"/> <circle cx="${21 + offX}" cy="${eyecy + offY}" r="6.5" fill="${s}"/> <circle cx="${79 + offX}" cy="${eyecy + offY}" r="6.5" fill="${s}"/> <circle cx="${19 + offX}" cy="${eyecy - 2 + offY}" r="1" fill="white"/> <circle cx="${77 + offX}" cy="${eyecy - 2 + offY}" r="1" fill="white"/></svg>`; },
         bee: (b, s, p, uid, t, extraDefs='') => { const bodyPath = "M 35 40 Q 35 20 65 20 Q 95 20 95 50 Q 95 80 65 80 Q 35 80 35 50"; return `<svg viewBox="0 0 100 100"><defs><clipPath id="clip-${uid}"><path d="${bodyPath}"/></clipPath>${extraDefs}</defs><path d="M 50 35 Q 30 10 50 5 Q 70 10 50 35" fill="white" opacity="0.8" stroke="#ddd"/> <path d="M 70 35 Q 90 10 70 5 Q 50 10 70 35" fill="white" opacity="0.8" stroke="#ddd"/> <path d="${bodyPath}" fill="${b}"/> <g clip-path="url(#clip-${uid})">${p}</g> <g clip-path="url(#clip-${uid})"><path d="M 50 20 L 50 80" stroke="rgba(0,0,0,0.6)" stroke-width="8"/> <path d="M 75 20 L 75 80" stroke="rgba(0,0,0,0.6)" stroke-width="8"/></g> <circle cx="30" cy="50" r="15" fill="#222"/> <circle cx="30" cy="50" r="7" fill="white"/> ${getPupil(30, 50, 4, 3, s, t.pupilAngle, t.pupilDist)}</svg>`; },
         beaver: (b, s, p, uid, t, extraDefs='') => { return `<svg viewBox="0 0 100 100"><defs><clipPath id="clip-${uid}"><rect x="5" y="25" width="70" height="55" rx="20" /></clipPath><mask id="mask-${uid}"><rect x="0" y="0" width="100" height="100" fill="white"/> <circle cx="21" cy="46" r="10" fill="black"/> <circle cx="59" cy="46" r="10" fill="black"/></mask>${extraDefs}</defs><ellipse cx="65" cy="52" rx="25" ry="12" fill="#5D4037" transform="rotate(-10 65 52)"/> <circle cx="10" cy="35" r="8" fill="${b}" filter="brightness(0.7)"/> <circle cx="70" cy="35" r="8" fill="${b}" filter="brightness(0.7)"/> <rect x="5" y="25" width="70" height="55" rx="20" fill="${b}"/> <g clip-path="url(#clip-${uid})" mask="url(#mask-${uid})">${p}</g> <circle cx="21" cy="46" r="5" fill="black"/><circle cx="19" cy="44" r="1.5" fill="white"/> <circle cx="59" cy="46" r="5" fill="black"/><circle cx="57" cy="44" r="1.5" fill="white"/> <path d="M 38 50 L 40 53 L 42 50" stroke="black" stroke-width="2" fill="none"/> <rect x="34" y="58" width="5" height="8" fill="white"/> <rect x="41" y="58" width="5" height="8" fill="white"/></svg>`; },
         kakapo: (b, s, p, uid, t, extraDefs='') => { return `<svg viewBox="0 0 100 100"><g transform="rotate(-15 50 50)"><defs><clipPath id="clip-${uid}"><path d="M 50 20 Q 80 20 80 60 Q 80 90 50 90 Q 20 90 20 60 Q 20 20 50 20 Z"/></clipPath><mask id="mask-${uid}"><rect x="0" y="0" width="100" height="100" fill="white"/> <circle cx="40" cy="35" r="9" fill="black"/></mask>${extraDefs}</defs><path d="M 65 75 L 90 85 L 70 60 Z" fill="${b}"/> <path d="M 50 20 Q 80 20 80 60 Q 80 90 50 90 Q 20 90 20 60 Q 20 20 50 20 Z" fill="${b}"/> <g clip-path="url(#clip-${uid})" mask="url(#mask-${uid})">${p}</g> <path d="M 28 34 L 15 41 L 28 44 Z" fill="#FFEB3B" stroke="black" stroke-width="1" stroke-linejoin="round"/> <circle cx="40" cy="35" r="5" fill="black"/> <circle cx="38" cy="33" r="2" fill="white"/> <circle cx="42" cy="37" r="1" fill="white" opacity="0.8"/> <path d="M 45 55 Q 60 70 30 70" fill="none" stroke="rgba(0,0,0,0.1)" stroke-width="2"/></g></svg>`; },
@@ -272,7 +417,7 @@
         onion: (b, s, p, uid, t, extraDefs='') => { const bodyPath = "M 50 15 Q 90 60 80 85 Q 50 100 20 85 Q 10 60 50 15"; return `<svg viewBox="0 0 100 100"><defs><clipPath id="clip-${uid}"><path d="${bodyPath}"/></clipPath>${extraDefs}</defs><path d="M 50 15 Q 45 5 40 5 M 50 15 Q 55 5 60 5" stroke="#4CAF50" stroke-width="4" fill="none"/> <path d="${bodyPath}" fill="${b}"/> <g clip-path="url(#clip-${uid})">${p}</g> <circle cx="25" cy="50" r="10" fill="white"/> <circle cx="25" cy="50" r="3" fill="black" transform="translate(${t.onionL.x}, ${t.onionL.y})"/> <circle cx="75" cy="50" r="10" fill="white"/> <circle cx="75" cy="50" r="3" fill="black" transform="translate(${t.onionR.x}, ${t.onionR.y})"/></svg>`; },
         kitty: (b, s, p, uid, t, extraDefs='') => { return `<svg viewBox="0 0 100 100"><defs><clipPath id="clip-${uid}"><rect x="15" y="35" width="70" height="50" rx="20" /></clipPath>${extraDefs}</defs> <path d="M 20 40 L 25 15 L 45 40 Z" fill="${b}"/> <path d="M 80 40 L 75 15 L 55 40 Z" fill="${b}"/> <rect x="15" y="35" width="70" height="50" rx="20" fill="${b}"/> <g clip-path="url(#clip-${uid})">${p}</g> <circle cx="35" cy="55" r="3" fill="black"/> <circle cx="65" cy="55" r="3" fill="black"/> <path d="M 47 53 L 53 53 L 50 58 Z" fill="pink"/> <path d="M 20 55 L 5 50 M 20 58 L 5 60 M 80 55 L 95 50 M 80 58 L 95 60" stroke="black" stroke-width="1" opacity="0.5"/></svg>`; },
         axolotl: (b, s, p, uid, t, extraDefs='') => { return `<svg viewBox="0 0 100 100"><defs><clipPath id="clip-${uid}"><rect x="20" y="25" width="60" height="60" rx="20" /></clipPath>${extraDefs}</defs> <path d="M 25 40 L 10 30 M 25 50 L 10 50 M 25 60 L 10 70 M 75 40 L 90 30 M 75 50 L 90 50 M 75 60 L 90 70" stroke="#E91E63" stroke-width="4" stroke-linecap="round"/> <rect x="20" y="25" width="60" height="60" rx="20" fill="${b}"/> <g clip-path="url(#clip-${uid})">${p}</g> <circle cx="35" cy="50" r="3" fill="black"/> <circle cx="65" cy="50" r="3" fill="black"/> <path d="M 40 60 Q 50 70 60 60" stroke="black" stroke-width="2" fill="none"/></svg>`; },
-        mushroom: (b, s, p, uid, t, extraDefs='') => { return `<svg viewBox="0 0 100 100"><rect x="35" y="50" width="30" height="40" rx="5" fill="white"/> <circle cx="45" cy="65" r="2" fill="black"/> <circle cx="55" cy="65" r="2" fill="black"/> <defs><clipPath id="clip-${uid}"><path d="M 10 50 Q 50 -10 90 50 Z"/></clipPath>${extraDefs}</defs> <path d="M 10 50 Q 50 -10 90 50 Z" fill="${b}"/> <g clip-path="url(#clip-${uid})">${p}</g></svg>`; }
+        mushroom: (b, s, p, uid, t, extraDefs='') => { return `<svg viewBox="0 0 100 100"><rect x="35" y="50" width="30" height="40" rx="5" fill="white" stroke="#d0d0d0" stroke-width="2"/> <circle cx="45" cy="65" r="2" fill="black"/> <circle cx="55" cy="65" r="2" fill="black"/> <defs><clipPath id="clip-${uid}"><path d="M 10 50 Q 50 -10 90 50 Z"/></clipPath>${extraDefs}</defs> <path d="M 10 50 Q 50 -10 90 50 Z" fill="${b}"/> <g clip-path="url(#clip-${uid})">${p}</g></svg>`; }
     };
 
     let state = { todos: [], collection: [], logs: [], containerHeight: 600 };
@@ -291,6 +436,8 @@
                 if (!c.traits) c.traits = { mouth: Math.random(), pupilAngle: Math.random() * Math.PI * 2, pupilDist: Math.random() * 4, onionL: {x: Math.random()*4-2, y: Math.random()*4-2}, onionR: {x: Math.random()*4-2, y: Math.random()*4-2} };
                 if (!c.cachedPatternSVG) { const patternGen = PATTERNS[c.pattern] || PATTERNS['none']; c.cachedPatternSVG = patternGen(c.spotColor, c.type); }
                 if (c.posX === undefined) { c.posX = Math.random() * 80 + 5; c.posY = Math.random() * 80 + 5; }
+                if (!c.currentThought) { c.currentThought = generateThought(); c.lastThoughtTime = Date.now(); c.isFirstThought = true; }
+                if (c.isFirstThought === undefined) c.isFirstThought = false;
             });
             save();
         } 
@@ -324,6 +471,28 @@
                 });
             }
         }, 4000);
+        
+        setInterval(() => {
+            let changed = false;
+            const now = Date.now();
+            state.collection.forEach(c => {
+                if (c.hatched && c.lastThoughtTime) {
+                    const timeSinceThought = now - c.lastThoughtTime;
+                    const thoughtInterval = (20 + Math.random() * 70) * 60 * 1000;
+                    if (timeSinceThought > thoughtInterval) {
+                        const oldThought = c.currentThought;
+                        c.currentThought = generateThought();
+                        c.lastThoughtTime = now;
+                        if (!c.isFirstThought) {
+                            addLog(`${c.generatedName} ${c.currentThought}`, c.id, true);
+                        }
+                        c.isFirstThought = false;
+                        changed = true;
+                    }
+                }
+            });
+            if (changed) save();
+        }, 60000);
     }
 
     function quickHatch(type) { addCreatureLogic(type, "Quick Hatch"); }
@@ -374,7 +543,7 @@
         state.collection.push({
             id: uid, type: type, bodyColor: colors.bodyColor, spotColor: colors.spotColor, speed: (Math.random() * 2) + 3, scale: randomScale, pattern: randomPattern, cachedPatternSVG: cachedPatternSVG, traits: traits,
             timestamp: Date.now(), taskName: taskName, paletteName: selectedPalette.name, shiny: isShiny, ombre: isOmbre, eggColor: eggStyle, hatched: false, hatchTime: Date.now() + (5 * 60 * 1000),
-            posX: Math.random() * 90, posY: Math.random() * 90
+            posX: Math.random() * 90, posY: Math.random() * 90, currentThought: generateThought(), lastThoughtTime: Date.now(), isFirstThought: true
         });
         save(); renderHabitat(); renderPaletteTracker(); checkExpandButton();
     }
@@ -410,10 +579,10 @@
         save(); renderHabitat();
     }
 
-    function addLog(text) {
+    function addLog(text, creatureId = null, isThoughtUpdate = false) {
         const now = new Date();
         const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        state.logs.unshift({ time: timeStr, text: text });
+        state.logs.unshift({ time: timeStr, text: text, creatureId: creatureId, isThoughtUpdate: isThoughtUpdate });
         if (state.logs.length > 50) state.logs.pop();
         save(); renderLog();
     }
@@ -430,7 +599,20 @@
             timestamp.textContent = log.time;
             const text = document.createElement('span');
             text.className = 'log-text';
-            text.textContent = log.text;
+            
+            if (log.isThoughtUpdate) {
+                text.innerHTML = `<span class="log-name" onclick="showCreatureProfile('${log.creatureId}')">${escapeHtml(log.text)}</span>`;
+            } else {
+                const matches = log.text.match(/^A (.+) hatched! Welcome, (.+)!$/);
+                if (matches && log.creatureId) {
+                    const creatureType = matches[1];
+                    const creatureName = matches[2];
+                    text.innerHTML = `A <strong>${escapeHtml(creatureType)}</strong> hatched! Welcome, <span class="log-name" onclick="showCreatureProfile('${log.creatureId}')">${escapeHtml(creatureName)}</span>!`;
+                } else {
+                    text.textContent = log.text;
+                }
+            }
+            
             entry.appendChild(timestamp);
             entry.appendChild(text);
             container.appendChild(entry);
@@ -503,6 +685,7 @@
         wrapper.dataset.status = 'hatched';
         wrapper.className = "creature-wrapper just-hatched";
         if (data.shiny) { wrapper.classList.add('is-shiny'); wrapper.style.filter = `drop-shadow(0 0 5px ${data.spotColor})`; }
+        wrapper.onclick = () => showCreatureProfile(data.id);
 
         let bodyFill = data.bodyColor; let extraDefs = '';
         if (data.ombre) {
@@ -538,7 +721,7 @@
             creature.hatched = true;
             if (!creature.generatedName) {
                 creature.generatedName = generateCreatureName();
-                addLog(`A ${creature.type} hatched! Welcome, ${creature.generatedName}!`);
+                addLog(`A ${creature.type} hatched! Welcome, ${creature.generatedName}!`, creature.id);
             }
             save();
             renderHabitat(); 
@@ -560,6 +743,79 @@
     }
 
     function handleEggLeave(e, wrapper) { if (timerInterval) clearInterval(timerInterval); const bubble = wrapper.querySelector('.egg-timer'); if (bubble) wrapper.removeChild(bubble); }
+    
+    function showCreatureProfile(creatureId) {
+        const creature = state.collection.find(c => c.id === creatureId);
+        if (!creature) return;
+        
+        const backdrop = document.createElement('div');
+        backdrop.className = 'profile-backdrop';
+        backdrop.onclick = () => { backdrop.remove(); modal.remove(); };
+        
+        const modal = document.createElement('div');
+        modal.className = 'profile-modal';
+        
+        const close = document.createElement('span');
+        close.className = 'profile-close';
+        close.textContent = '×';
+        close.onclick = () => { backdrop.remove(); modal.remove(); };
+        modal.appendChild(close);
+        
+        const creatureDiv = document.createElement('div');
+        creatureDiv.className = 'profile-creature';
+        const svgString = SVG_GEN[creature.type](creature.bodyColor, creature.spotColor, creature.cachedPatternSVG, creature.id, creature.traits, '');
+        creatureDiv.innerHTML = svgString;
+        modal.appendChild(creatureDiv);
+        
+        const nameDiv = document.createElement('div');
+        nameDiv.className = 'profile-name';
+        nameDiv.textContent = creature.generatedName || 'Unknown';
+        modal.appendChild(nameDiv);
+        
+        const info = document.createElement('div');
+        info.className = 'profile-info';
+        
+        const typeItem = document.createElement('div');
+        typeItem.className = 'profile-item';
+        typeItem.innerHTML = `<div class="profile-item-label">Type</div><div class="profile-item-value">${escapeHtml(creature.type)}</div>`;
+        info.appendChild(typeItem);
+        
+        const paletteItem = document.createElement('div');
+        paletteItem.className = 'profile-item';
+        paletteItem.innerHTML = `<div class="profile-item-label">Palette</div><div class="profile-item-value">${escapeHtml(creature.paletteName)}</div>`;
+        info.appendChild(paletteItem);
+        
+        const patternItem = document.createElement('div');
+        patternItem.className = 'profile-item';
+        patternItem.innerHTML = `<div class="profile-item-label">Pattern</div><div class="profile-item-value">${escapeHtml(creature.pattern)}</div>`;
+        info.appendChild(patternItem);
+        
+        const taskItem = document.createElement('div');
+        taskItem.className = 'profile-item';
+        taskItem.innerHTML = `<div class="profile-item-label">Task</div><div class="profile-item-value">${escapeHtml(creature.taskName)}</div>`;
+        info.appendChild(taskItem);
+        
+        let special = '';
+        if (creature.shiny) special += '✨ Shiny ';
+        if (creature.ombre) special += '🌈 Ombre';
+        if (special) {
+            const specialDiv = document.createElement('div');
+            specialDiv.className = 'profile-special';
+            specialDiv.textContent = 'Special: ' + special;
+            info.appendChild(specialDiv);
+        }
+        
+        if (creature.currentThought) {
+            const thoughtDiv = document.createElement('div');
+            thoughtDiv.className = 'profile-thought';
+            thoughtDiv.innerHTML = `💭 ${escapeHtml(creature.currentThought)}`;
+            info.appendChild(thoughtDiv);
+        }
+        
+        modal.appendChild(info);
+        document.body.appendChild(backdrop);
+        document.body.appendChild(modal);
+    }
     function showNotification(text) { const notif = document.getElementById('notification'); notif.innerText = `✨ Palette Unlocked: ${text}! ✨`; notif.classList.add('show'); setTimeout(() => notif.classList.remove('show'), 4000); }
     function renderPaletteTracker() {
         const tracker = document.getElementById('paletteTracker'); const score = state.collection.length; tracker.innerHTML = '';
@@ -577,7 +833,7 @@
         state.collection.forEach(c => {
             if (!c.hatched && now > c.hatchTime) {
                 c.hatched = true;
-                if (!c.generatedName) { c.generatedName = generateCreatureName(); addLog(`A ${c.type} hatched! Welcome, ${c.generatedName}!`); }
+                if (!c.generatedName) { c.generatedName = generateCreatureName(); addLog(`A ${c.type} hatched! Welcome, ${c.generatedName}!`, c.id); }
                 changed = true;
             }
         });
